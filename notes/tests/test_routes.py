@@ -21,6 +21,7 @@ class TestRoutes(TestCase):
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_not_user(self):
+        login_url = reverse('users:login')
         url =(
                 ('notes:list', None),
                 ('notes:success', None),
@@ -31,8 +32,9 @@ class TestRoutes(TestCase):
         for name, args in url:
             with self.subTest(name=name):
                 url = reverse(name, args=args)
+                redirect_url = f'{login_url}?next={url}'
                 response = self.client.get(url)
-                self.assertEqual(response.status_code, HTTPStatus.FOUND)
+                self.assertRedirects(response, redirect_url)
 
 
 
