@@ -7,6 +7,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
 import pdb
 from notes.forms import NoteForm
+
 User = get_user_model()
 
 class TestContent(TestCase):
