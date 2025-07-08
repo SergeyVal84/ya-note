@@ -27,7 +27,7 @@ class TestContentEditDelete(TestCase):
         cls.edit_url = reverse('notes:edit', args=(cls.note.slug,))
         cls.success_url = reverse('notes:success')
         cls.form_data = {'text': cls.NEW_NOTE_TEXT, 'title': 'Заголовок', 'author': 'author'}
-        cls.list_url = reverse('notes:list')
+        cls.delete_url = reverse('notes:delete', args=(cls.note.slug,))
 
     def test_edit_note(self):
         response = self.author_client.post(self.edit_url, data=self.form_data)
@@ -40,6 +40,19 @@ class TestContentEditDelete(TestCase):
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
         self.note.refresh_from_db()
         self.assertEqual(self.note.text, self.NOTE_TEXT)
+
+    def test_author_can_delete_note(self):
+        response = self.author_client.post(self.delete_url)
+        self.assertRedirects(response, self.success_url)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+        count_notes = Note.objects.count()
+        self.assertEqual(count_notes, 0)
+    
+    def test_not_author_can_not_delete_note(self):
+        response = self.not_author_client.post(self.delete_url)
+        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
+        count_notes = Note.objects.count()
+        self.assertEqual(count_notes, 1)
 
     
 class TestContentAdd(TestCase):
