@@ -76,7 +76,7 @@ class TestContentAdd(TestCase):
         response = self.user_client.post(self.add_url, data=self.form_data)
         self.assertRedirects(response, self.success_url)
         count_notes = Note.objects.count()
-        self.assertEqual(count_notes,1)
+        self.assertEqual(count_notes, 1)
         note = Note.objects.get()
         self.assertEqual(note.author, self.user)
 
@@ -97,5 +97,5 @@ class TestContentAdd(TestCase):
         response = self.user_client.post(self.add_url, data=self.form_data_no_slug)
         self.assertRedirects(response, self.success_url)
         count_notes = Note.objects.count()
-        self.assertEqual(count_notes,1)
+        self.assertEqual(count_notes, 1)
         
