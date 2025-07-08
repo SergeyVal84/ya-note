@@ -51,6 +51,7 @@ class TestContentAdd(TestCase):
         cls.user_client.force_login(cls.user)
         cls.success_url = reverse('notes:success')
         cls.form_data = {'text': 'Text', 'title': 'Заголовок', 'author': 'user'}
+        cls.form_data_no_slug = {'title': 'Заголовок', 'text': 'Текст', 'slug': None, 'author': cls.user}
         cls.add_url = reverse('notes:add')
 
     def test_not_user_can_not_add_note(self):
@@ -65,3 +66,23 @@ class TestContentAdd(TestCase):
         self.assertEqual(count_notes,1)
         note = Note.objects.get()
         self.assertEqual(note.author, self.user)
+
+    def test_slug_is_unique(self):
+        all_notes = [
+            Note(title='Заголовок', text='Текст', slug=f'test {index}', author=self.user)
+            for index in range(2)
+        ]
+        Note.objects.bulk_create(all_notes)
+        slug_1 = Note.objects.first().slug
+        slug_2 = Note.objects.last().slug
+        self.assertNotEqual(slug_1, slug_2)
+        
+    def test_slug_is_none(self):
+        if self.form_data_no_slug['slug'] is None:
+            slug = slugify(self.form_data_no_slug['title'])
+        self.form_data_no_slug = {'title': 'Заголовок', 'text': 'Текст', 'slug': slug, 'author': self.user}
+        response = self.user_client.post(self.add_url, data=self.form_data_no_slug)
+        self.assertRedirects(response, self.success_url)
+        count_notes = Note.objects.count()
+        self.assertEqual(count_notes,1)
+        
