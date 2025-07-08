@@ -37,9 +37,23 @@ class TestContentEditDelete(TestCase):
     
     def test_not_author_cant_edit_note(self):
         response = self.not_author_client.post(self.edit_url, data=self.form_data)
-        self.assertRedirects(response.status_code, HTTPStatus.NOT_FOUND)
+        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
         self.note.refresh_from_db()
         self.assertEqual(self.note.text, self.NOTE_TEXT)
 
-
+    
 class TestContentAdd(TestCase):
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = User.objects.create(username='Пльзователь')
+        cls.user_client = Client()
+        cls.user_client.force_login(cls.user)
+        cls.success_url = reverse('notes:success')
+        cls.form_data = {'text': 'Text', 'title': 'Заголовок', 'author': 'user'}
+        cls.add_url = reverse('notes:add')
+
+    def test_not_user_can_not__add_note(self):
+        self.client.post(self.add_url, data=self.form_data)
+        count_notes = Note.objects.count()
+        self.assertEqual(count_notes, 0)
