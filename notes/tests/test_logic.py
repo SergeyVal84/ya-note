@@ -26,10 +26,11 @@ class TestContentEditDelete(TestCase):
         cls.note = Note.objects.create(title='Заголовок', text=cls.NOTE_TEXT, slug='slug_name', author=cls.author)
         cls.edit_url = reverse('notes:edit', args=(cls.note.slug,))
         cls.success_url = reverse('notes:success')
-        cls.form_data = {'title': cls.NEW_NOTE_TEXT}
+        cls.form_data = {'text': cls.NEW_NOTE_TEXT, 'title': 'Заголовок', 'author': 'author'}
         cls.add_url = reverse('notes:add')
 
     def test_edit_note(self):
         response = self.author_client.post(self.edit_url, data=self.form_data)
-        pdb.set_trace()
         self.assertRedirects(response, self.success_url)
+        self.note.refresh_from_db()
+        self.assertEqual(self.note.text, self.NEW_NOTE_TEXT)
