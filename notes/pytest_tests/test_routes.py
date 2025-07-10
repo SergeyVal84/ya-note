@@ -1,6 +1,6 @@
 import pytest
 from http import HTTPStatus
-
+from pytest_django.asserts import assertRedirects
 from django.urls import reverse
 from pytest_lazyfixture import lazy_fixture
 
@@ -50,3 +50,21 @@ def test_pages_availability_for_different_users(
     url = reverse(name, args=(note.slug,))
     response = parametrized_client.get(url)
     assert response.status_code == expected_status
+
+@pytest.mark.parametrize(
+    'name, args',
+    (
+        ('notes:detail', lazy_fixture('slug_for_args')),
+        ('notes:edit', lazy_fixture('slug_for_args')),
+        ('notes:delete', lazy_fixture('slug_for_args')),
+        ('notes:add', None),
+        ('notes:success', None),
+        ('notes:list', None),
+    ),
+)
+def test_redirects(client, name, args):
+    login_url = reverse('users:login')
+    url = reverse(name, args=args)
+    expected_url = f'{login_url}?next={url}'
+    response = client.get(url)
+    assertRedirects(response, expected_url)
