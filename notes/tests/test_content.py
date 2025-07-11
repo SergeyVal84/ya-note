@@ -1,24 +1,27 @@
-from http import HTTPStatus
-
-from django.test import TestCase
-from django.urls import reverse
-from notes.models import Note
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
-import pdb
+from django.test import TestCase
+from django.urls import reverse
+
 from notes.forms import NoteForm
+from notes.models import Note
 
 User = get_user_model()
 
-class TestContent(TestCase):
 
+class TestContent(TestCase):
     LIST_URL = reverse('notes:list')
 
     @classmethod
     def setUpTestData(cls):
         cls.author = User.objects.create(username='Автор')
         cls.reader = User.objects.create(username='Читатель')
-        cls.notes = Note.objects.create(title='Заголовок', text='Текст', slug='test', author=cls.author)
+        cls.notes = Note.objects.create(
+            title='Заголовок',
+            text='Текст',
+            slug='test',
+            author=cls.author
+        )
 
     def test_note_in_list(self):
         self.client.force_login(self.author)

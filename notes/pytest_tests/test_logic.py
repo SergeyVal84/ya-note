@@ -1,16 +1,15 @@
-from pytest_django.asserts import assertRedirects
+from http import HTTPStatus
+
+import pytest
+from pytest_django.asserts import assertFormError, assertRedirects
+
+from pytils.translit import slugify
 
 from django.urls import reverse
-from http import HTTPStatus
-from notes.models import Note
-import pytest
 
-# Импортируем функции для проверки редиректа и ошибки формы:
-from pytest_django.asserts import assertRedirects, assertFormError
-
-# Импортируем из модуля forms сообщение об ошибке:
 from notes.forms import WARNING
-from pytils.translit import slugify
+from notes.models import Note
+
 
 def test_user_can_create_note(author_client, author, form_data):
     url = reverse('notes:add')
@@ -23,6 +22,7 @@ def test_user_can_create_note(author_client, author, form_data):
     assert new_note.slug == form_data['slug']
     assert new_note.author == author
 
+
 @pytest.mark.django_db
 def test_anonymous_user_cant_create_note(client, form_data):
     url = reverse('notes:add')
@@ -30,62 +30,50 @@ def test_anonymous_user_cant_create_note(client, form_data):
     login_url = reverse('users:login')
     expected_url = f'{login_url}?next={url}'
     assertRedirects(response, expected_url)
-    assert Note.objects.count() == 0 
+    assert Note.objects.count() == 0
 
-# Вызываем фикстуру отдельной заметки, чтобы в базе появилась запись.
+
 def test_not_unique_slug(author_client, note, form_data):
     url = reverse('notes:add')
-    # Подменяем slug новой заметки на slug уже существующей записи:
     form_data['slug'] = note.slug
-    # Пытаемся создать новую заметку:
     response = author_client.post(url, data=form_data)
-    # Проверяем, что в ответе содержится ошибка формы для поля slug:
-    assertFormError(response.context['form'], 'slug', errors=(note.slug + WARNING))
-    # Убеждаемся, что количество заметок в базе осталось равным 1:
-    assert Note.objects.count() == 1 
+    assertFormError(
+        response.context['form'],
+        'slug',
+        errors=(note.slug + WARNING)
+    )
+    assert Note.objects.count() == 1
+
 
 def test_empty_slug(author_client, form_data):
     url = reverse('notes:add')
-    # Убираем поле slug из словаря:
     form_data.pop('slug')
     response = author_client.post(url, data=form_data)
-    # Проверяем, что даже без slug заметка была создана:
     assertRedirects(response, reverse('notes:success'))
     assert Note.objects.count() == 1
-    # Получаем созданную заметку из базы:
     new_note = Note.objects.get()
-    # Формируем ожидаемый slug:
     expected_slug = slugify(form_data['title'])
-    # Проверяем, что slug заметки соответствует ожидаемому:
     assert new_note.slug == expected_slug
 
-# В параметрах вызвана фикстура note: значит, в БД создана заметка.
+
 def test_author_can_edit_note(author_client, form_data, note):
-    # Получаем адрес страницы редактирования заметки:
     url = reverse('notes:edit', args=(note.slug,))
-    # В POST-запросе на адрес редактирования заметки
-    # отправляем form_data - новые значения для полей заметки:
     response = author_client.post(url, form_data)
-    # Проверяем редирект:
     assertRedirects(response, reverse('notes:success'))
-    # Обновляем объект заметки note: получаем обновлённые данные из БД:
     note.refresh_from_db()
-    # Проверяем, что атрибуты заметки соответствуют обновлённым:
     assert note.title == form_data['title']
     assert note.text == form_data['text']
-    assert note.slug == form_data['slug'] 
+    assert note.slug == form_data['slug']
+
 
 def test_other_user_cant_edit_note(not_author_client, form_data, note):
     url = reverse('notes:edit', args=(note.slug,))
     response = not_author_client.post(url, form_data)
-    # Проверяем, что страница не найдена:
     assert response.status_code == HTTPStatus.NOT_FOUND
-    # Получаем новый объект запросом из БД.
     note_from_db = Note.objects.get(id=note.id)
-    # Проверяем, что атрибуты объекта из БД равны атрибутам заметки до запроса.
     assert note.title == note_from_db.title
     assert note.text == note_from_db.text
-    assert note.slug == note_from_db.slug 
+    assert note.slug == note_from_db.slug
 
 
 def test_author_can_delete_note(author_client, slug_for_args):
@@ -99,4 +87,4 @@ def test_other_user_cant_delete_note(not_author_client, slug_for_args):
     url = reverse('notes:delete', args=slug_for_args)
     response = not_author_client.post(url)
     assert response.status_code == HTTPStatus.NOT_FOUND
-    assert Note.objects.count() == 1 
+    assert Note.objects.count() == 1

@@ -1,18 +1,25 @@
-import pytest
 from http import HTTPStatus
+
+import pytest
 from pytest_django.asserts import assertRedirects
+
 from django.urls import reverse
-from pytest_lazyfixture import lazy_fixture
+
 
 @pytest.mark.parametrize(
     ('name', 'method'),
-    (('notes:home', 'get'), ('users:login', 'get'), ('users:logout', 'post'), ('users:signup', 'get'))
+    (
+        ('notes:home', 'get'),
+        ('users:login', 'get'),
+        ('users:logout', 'post'),
+        ('users:signup', 'get')
+    ),
 )
-
 def test_pages_availability_for_anonymous_user(client, name, method):
     url = reverse(name,)
     response = getattr(client,method)(url)
     assert response.status_code == HTTPStatus.OK
+
 
 @pytest.mark.parametrize(
     'name',
@@ -33,6 +40,7 @@ def test_pages_availability_for_author(author_client, name, note):
     response = author_client.get(url)
     assert response.status_code == HTTPStatus.OK
 
+
 @pytest.mark.parametrize(
     'parametrized_client, expected_status',
     (
@@ -50,6 +58,7 @@ def test_pages_availability_for_different_users(
     url = reverse(name, args=(note.slug,))
     response = parametrized_client.get(url)
     assert response.status_code == expected_status
+
 
 @pytest.mark.parametrize(
     'name, args',

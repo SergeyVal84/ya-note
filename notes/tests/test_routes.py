@@ -1,11 +1,13 @@
 from http import HTTPStatus
 
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+
 from notes.models import Note
-from django.contrib.auth import get_user_model
 
 User = get_user_model()
+
 
 class TestRoutes(TestCase):
 
@@ -13,7 +15,12 @@ class TestRoutes(TestCase):
     def setUpTestData(cls):
         cls.author = User.objects.create(username='Автор')
         cls.reader = User.objects.create(username='Читатель')
-        cls.notes = Note.objects.create(title='Заголовок', text='Текст', slug='test', author=cls.author)
+        cls.notes = Note.objects.create(
+            title='Заголовок',
+            text='Текст',
+            slug='test',
+            author=cls.author
+        )
 
     def test_home_page(self):
         url = reverse('notes:home')
@@ -36,8 +43,6 @@ class TestRoutes(TestCase):
                 response = self.client.get(url)
                 self.assertRedirects(response, redirect_url)
 
-
-
     def test_detail_edit_delete_note(self):
         users_statuses = (
             (self.author, HTTPStatus.OK),
@@ -56,7 +61,6 @@ class TestRoutes(TestCase):
             (self.author, HTTPStatus.OK),
             (self.reader, HTTPStatus.OK),
         )
-        
         for user, status in users_statuses:
             url = (
                 'notes:add',
